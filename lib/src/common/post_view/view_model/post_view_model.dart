@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:mobx/mobx.dart';
 import 'package:vote38/src/common/mapper/post_view_mapper.dart';
@@ -155,10 +157,15 @@ abstract class _PostViewModel with Store {
 
   @action
   Future<void> getResults() async {
-    await updateVotingStatus();
     await _postService.getVotingOptionsByPost(postId).then((value) {
       rows = mapOptionsAccountToPost(value, post, nftMeta!.code);
     });
+  }
+
+  @action
+  Future<void> reload() async {
+    await updateVotingStatus();
+    await getResults();
   }
 
   @action
@@ -194,37 +201,22 @@ abstract class _PostViewModel with Store {
       return;
     }
 
-    if (isSelectAll) {
-      selectedOptions.clear();
-      requestsToVote.clear();
-      await _assetService.transfer(
-        nftMeta!.code,
-        accountSeed,
-        nftMeta!.issuer,
+    for (final voterId in selectedOptions) {
+      unawaited(
+        _assetService.transfer(
+          nftMeta!.code,
+          accountSeed,
+          voterId,
+        ),
       );
-      await _votingService.deleteAllRequests(postId);
-    }
-    {
-      for (final voterId in selectedOptions) {
-        selectedOptions.remove(voterId);
-        requestsToVote.removeWhere((element) => element.voterId == voterId);
+      await _votingService.deleteRequest(voterId, postId);
+      requestsToVote.removeWhere((element) => element.voterId == voterId);
 
-        await compute(
-          (List<String> v) {
-            for (final voterId in v) {
-              _assetService.transfer(
-                nftMeta!.code,
-                accountSeed,
-                voterId,
-              );
-            }
-          },
-          selectedOptions,
-        );
-
-        await _votingService.deleteRequest(voterId, postId);
-      }
+      selectedOptions.remove(voterId);
     }
+
+    selectedOptions.clear();
+    requestsToVote.clear();
     isLoading = false;
   }
 
