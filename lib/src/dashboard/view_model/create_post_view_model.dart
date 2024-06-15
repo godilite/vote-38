@@ -119,7 +119,7 @@ abstract class _CreatePostViewModel with Store {
   @action
   Future<void> submitPost() async {
     postState = PostState.loading;
-    if (image == null) {
+    if (cid.isEmpty) {
       error = 'nftimagerequired';
       postState = PostState.error;
       return;
