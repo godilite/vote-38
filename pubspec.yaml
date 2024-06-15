@@ -18,6 +18,7 @@ dependencies:
   firebase_core: 3.1.0
   flutter:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
   flutter_mobx: ^2.2.1+1
   flutter_secure_storage: ^9.1.1
   flutter_svg: ^2.0.10+1
@@ -80,3 +81,7 @@ flutter:
         - asset: fonts/FiraMono-Regular.ttf
         - asset: fonts/FiraMono-Bold.ttf
         - asset: fonts/FiraMono-Medium.ttf
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
