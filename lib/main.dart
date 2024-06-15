@@ -9,6 +9,7 @@ import 'package:vote38/src/app/vote_chain_app.dart';
 import 'package:vote38/src/di/di.dart';
 import 'package:vote38/src/services/model/account.dart';
 import 'package:vote38/src/services/secure_storage.dart';
+import 'package:vote38/src/settings/model/setting.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,12 +43,14 @@ Future<void> _setupHive() async {
   Hive.registerAdapter(LinkItemAdapter());
   Hive.registerAdapter(AccountLinksAdapter());
   Hive.registerAdapter(AccountDataAdapter());
+  Hive.registerAdapter(SettingAdapter());
 
   getIt.registerFactory<SecureStorage>(
     () => SecureStorageImpl(const FlutterSecureStorage()),
   );
 
   final secureStorage = getIt.get<SecureStorage>();
+
   final encryptionKeyString = await secureStorage.read(keyStoreKey);
   if (encryptionKeyString == null) {
     final key = Hive.generateSecureKey();
@@ -57,6 +60,7 @@ Future<void> _setupHive() async {
     );
   }
   final key = await secureStorage.read(keyStoreKey);
+
   final encryptionKeyUint8List = base64Url.decode(key!);
   await Hive.openBox<VoteAccount>(
     VoteAccount.boxName,
@@ -64,6 +68,10 @@ Future<void> _setupHive() async {
   );
   await Hive.openBox<VoteBalance>(
     VoteBalance.boxName,
+    encryptionCipher: HiveAesCipher(encryptionKeyUint8List),
+  );
+  await Hive.openBox<Setting>(
+    Setting.boxName,
     encryptionCipher: HiveAesCipher(encryptionKeyUint8List),
   );
   await Hive.openBox<int>(

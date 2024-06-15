@@ -24,6 +24,7 @@ import 'package:vote38/src/dashboard/view_model/dashboard_view_model.dart';
 import 'package:vote38/src/di/di.dart';
 import 'package:vote38/src/navigation/nav_paths.dart';
 import 'package:vote38/src/settings/view/setting_view.dart';
+import 'package:vote38/src/settings/viewmodel/setting_view_model.dart';
 import 'package:vote38/src/timeline/view/search_view.dart';
 import 'package:vote38/src/timeline/view/timeline_view.dart';
 import 'package:vote38/src/timeline/view_model/timeline_view_model.dart';
@@ -169,13 +170,17 @@ class AppRouter {
             path: NavPaths.dashboard.path,
             pageBuilder: (context, state) => NoTransitionPage(
               child: DashboardView(
-                viewModel: getIt<DashboardViewModel>()..init(),
+                viewModel: getIt<DashboardViewModel>(),
               ),
             ),
           ),
           GoRoute(
             path: NavPaths.setting.path,
-            pageBuilder: (context, state) => const NoTransitionPage(child: SettingView()),
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: SettingView(
+                viewModel: getIt.get<SettingViewModel>()..getSettings(),
+              ),
+            ),
           ),
           GoRoute(
             path: NavPaths.search.path,

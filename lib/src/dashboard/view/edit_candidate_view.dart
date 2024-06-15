@@ -52,7 +52,7 @@ class _EditCandidateViewState extends State<EditCandidateView> {
               children: [
                 const SizedBox(width: 10),
                 Text(
-                  'Poll candidate',
+                  'Poll options',
                   style: context.moonTypography?.heading.text40,
                 ),
                 const Spacer(),
@@ -108,7 +108,7 @@ class _EditCandidateViewState extends State<EditCandidateView> {
                                 )
                               : null,
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 20),
                       ],
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -118,7 +118,7 @@ class _EditCandidateViewState extends State<EditCandidateView> {
                               alignment: Alignment.centerLeft,
                               child: MoonFilledButton(
                                 buttonSize: MoonButtonSize.lg,
-                                backgroundColor: context.moonColors?.jiren,
+                                backgroundColor: context.moonColors?.chichi,
                                 onTap: () async {
                                   final data = await modalBuilder(context);
                                   if (data == null) {
@@ -187,40 +187,47 @@ class _OptionModalState extends State<OptionModal> {
   String optionValue = '';
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        const Text('Property name (e.g. age, party, etc.)'),
-        const SizedBox(height: 10),
-        MoonTextInput(
-          hintText: 'Enter property name',
-          onChanged: (value) {
-            setState(() {
-              optionName = value;
-            });
-          },
-        ),
-        const SizedBox(height: 20),
-        const Text('Property value (e.g. 18, Democrat, etc.)'),
-        const SizedBox(height: 10),
-        MoonTextInput(
-          hintText: 'Enter property value',
-          onChanged: (value) {
-            setState(() {
-              optionValue = value;
-            });
-          },
-        ),
-        const SizedBox(height: 20),
-        MoonFilledButton(
-          buttonSize: MoonButtonSize.lg,
-          backgroundColor: context.moonColors?.krillin,
-          onTap: () {
-            Navigator.of(context).pop({'key': optionName, 'value': optionValue});
-          },
-          label: const Text('Add option'),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0, left: 8, right: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          const Text('Property name (e.g. age, party, etc.)'),
+          const SizedBox(height: 10),
+          MoonTextInput(
+            hintText: 'Enter property name',
+            activeBorderColor: context.moonColors?.roshi,
+            onChanged: (value) {
+              setState(() {
+                optionName = value;
+              });
+            },
+          ),
+          const SizedBox(height: 20),
+          const Text('Property value (e.g. 18, Democrat, etc.)'),
+          const SizedBox(height: 10),
+          MoonTextInput(
+            hintText: 'Enter property value',
+            activeBorderColor: context.moonColors?.roshi,
+            onChanged: (value) {
+              setState(() {
+                optionValue = value;
+              });
+            },
+          ),
+          const SizedBox(height: 20),
+          MoonFilledButton(
+            buttonSize: MoonButtonSize.lg,
+            isFullWidth: true,
+            backgroundColor: context.moonColors?.krillin,
+            onTap: () {
+              Navigator.of(context).pop({'key': optionName, 'value': optionValue});
+            },
+            label: const Text('Add option'),
+          ),
+        ],
+      ),
     );
   }
 }

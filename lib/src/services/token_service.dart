@@ -159,17 +159,62 @@ class AssetServiceImpl implements AssetService {
     String description,
     Stream<Uint8List> file,
   ) async {
+    int retry = 0;
+
     final kp = KeyPair.fromSecretSeed(secretSeed);
 
     final issuer = kp.accountId;
+    try {
+      final minio = Minio(
+        endPoint: 's3.filebase.com',
+        accessKey: accessKey,
+        secretKey: secretKey,
+      );
+      final cid = await _uploadFile(
+        code: code,
+        secretSeed: secretSeed,
+        name: name,
+        issuer: issuer,
+        description: description,
+        file: file,
+        minio: minio,
+      );
+      return cid;
+    } catch (e) {
+      debugPrint('Error creating NFT: $e');
+      if (retry < 1) {
+        debugPrint('Retrying...');
+        retry++;
+        final minio = Minio(
+          endPoint: 's3.filebase.com',
+          accessKey: accessKey,
+          secretKey: secretKey,
+        );
+        return _uploadFile(
+          code: code,
+          secretSeed: secretSeed,
+          name: name,
+          issuer: issuer,
+          description: description,
+          file: file,
+          minio: minio,
+        );
+      } else {
+        throw Exception('Error creating NFT: $e');
+      }
+    }
+  }
 
+  Future<String> _uploadFile({
+    required String code,
+    required String secretSeed,
+    required String name,
+    required String issuer,
+    required String description,
+    required Stream<Uint8List> file,
+    required Minio minio,
+  }) async {
     final cleanedDescription = description.replaceAll('\n', ' ').replaceAll(RegExp(r'[^\x20-\x7E]'), '');
-
-    final minio = Minio(
-      endPoint: 's3.filebase.com',
-      accessKey: accessKey,
-      secretKey: secretKey,
-    );
 
     final fileName = 'nft-$code-${DateTime.now().millisecondsSinceEpoch}.png';
 
@@ -180,10 +225,14 @@ class AssetServiceImpl implements AssetService {
       'code': code,
     };
     String? cid;
+
+    final fileBuff = await file.toList();
+    final fileBuffStream = Stream.fromIterable(fileBuff);
+
     await minio.putObject(
       bucket,
       fileName,
-      file,
+      fileBuffStream,
       metadata: metadata,
       onProgress: (p0) {
         _uploadProgress.put('nftImageUploadProgress', p0);
@@ -210,10 +259,13 @@ class AssetServiceImpl implements AssetService {
     await metaJsonFile.writeAsString(nftMeta.toString());
     final metaFileStream = metaJsonFile.readAsBytes().asStream();
 
+    final jsonBuffer = await metaFileStream.toList();
+    final bufferedStream = Stream.fromIterable(jsonBuffer);
+
     await minio.putObject(
       bucket,
       '$fileName-meta.json',
-      metaFileStream,
+      bufferedStream,
       onHeaders: (headers) {
         metaCid = headers["x-amz-meta-cid"];
       },

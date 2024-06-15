@@ -9,6 +9,13 @@ part of 'create_post_view_model.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$CreatePostViewModel on _CreatePostViewModel, Store {
+  Computed<bool>? _$canAddNftComputed;
+
+  @override
+  bool get canAddNft =>
+      (_$canAddNftComputed ??= Computed<bool>(() => super.canAddNft,
+              name: '_CreatePostViewModel.canAddNft'))
+          .value;
   Computed<bool>? _$canSubmitComputed;
 
   @override
@@ -36,19 +43,19 @@ mixin _$CreatePostViewModel on _CreatePostViewModel, Store {
     });
   }
 
-  late final _$isLoadingAtom =
-      Atom(name: '_CreatePostViewModel.isLoading', context: context);
+  late final _$postStateAtom =
+      Atom(name: '_CreatePostViewModel.postState', context: context);
 
   @override
-  bool get isLoading {
-    _$isLoadingAtom.reportRead();
-    return super.isLoading;
+  PostState get postState {
+    _$postStateAtom.reportRead();
+    return super.postState;
   }
 
   @override
-  set isLoading(bool value) {
-    _$isLoadingAtom.reportWrite(value, super.isLoading, () {
-      super.isLoading = value;
+  set postState(PostState value) {
+    _$postStateAtom.reportWrite(value, super.postState, () {
+      super.postState = value;
     });
   }
 
@@ -260,6 +267,54 @@ mixin _$CreatePostViewModel on _CreatePostViewModel, Store {
     });
   }
 
+  late final _$cidAtom =
+      Atom(name: '_CreatePostViewModel.cid', context: context);
+
+  @override
+  String get cid {
+    _$cidAtom.reportRead();
+    return super.cid;
+  }
+
+  @override
+  set cid(String value) {
+    _$cidAtom.reportWrite(value, super.cid, () {
+      super.cid = value;
+    });
+  }
+
+  late final _$isNftLoadingAtom =
+      Atom(name: '_CreatePostViewModel.isNftLoading', context: context);
+
+  @override
+  bool get isNftLoading {
+    _$isNftLoadingAtom.reportRead();
+    return super.isNftLoading;
+  }
+
+  @override
+  set isNftLoading(bool value) {
+    _$isNftLoadingAtom.reportWrite(value, super.isNftLoading, () {
+      super.isNftLoading = value;
+    });
+  }
+
+  late final _$isNftEditedAtom =
+      Atom(name: '_CreatePostViewModel.isNftEdited', context: context);
+
+  @override
+  bool get isNftEdited {
+    _$isNftEditedAtom.reportRead();
+    return super.isNftEdited;
+  }
+
+  @override
+  set isNftEdited(bool value) {
+    _$isNftEditedAtom.reportWrite(value, super.isNftEdited, () {
+      super.isNftEdited = value;
+    });
+  }
+
   late final _$initAsyncAction =
       AsyncAction('_CreatePostViewModel.init', context: context);
 
@@ -333,7 +388,7 @@ mixin _$CreatePostViewModel on _CreatePostViewModel, Store {
   String toString() {
     return '''
 options: ${options},
-isLoading: ${isLoading},
+postState: ${postState},
 question: ${question},
 webLink: ${webLink},
 videoLink: ${videoLink},
@@ -347,6 +402,10 @@ postAccountSeed: ${postAccountSeed},
 issuerAccountSeed: ${issuerAccountSeed},
 nftName: ${nftName},
 filePickerResult: ${filePickerResult},
+cid: ${cid},
+isNftLoading: ${isNftLoading},
+isNftEdited: ${isNftEdited},
+canAddNft: ${canAddNft},
 canSubmit: ${canSubmit}
     ''';
   }

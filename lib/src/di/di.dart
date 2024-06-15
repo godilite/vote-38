@@ -17,6 +17,8 @@ import 'package:vote38/src/services/secure_storage.dart';
 import 'package:vote38/src/services/startup_service.dart';
 import 'package:vote38/src/services/token_service.dart';
 import 'package:vote38/src/services/voting_service.dart';
+import 'package:vote38/src/settings/model/setting.dart';
+import 'package:vote38/src/settings/viewmodel/setting_view_model.dart';
 import 'package:vote38/src/timeline/view_model/timeline_view_model.dart';
 
 GetIt getIt = GetIt.instance;
@@ -56,7 +58,7 @@ void setupDI() {
       FirebaseFirestore.instance,
     ),
   );
-  getIt.registerLazySingleton<DashboardViewModel>(() => DashboardViewModel(getIt(), getIt(), getIt()));
+  getIt.registerLazySingleton<DashboardViewModel>(() => DashboardViewModel(getIt(), getIt()));
   getIt.registerSingleton<CreatePostViewModel>(CreatePostViewModel(getIt(), getIt(), getIt()));
   getIt.registerLazySingleton<TimelineViewModel>(() => TimelineViewModel(FirebaseFirestore.instance));
   getIt.registerFactory(
@@ -66,6 +68,15 @@ void setupDI() {
       getIt(),
       Network.TESTNET,
       Hive.box('votingrequests'),
+    ),
+  );
+
+  getIt.registerSingleton<SettingViewModel>(
+    SettingViewModel(
+      Hive.box(Setting.boxName),
+      StellarSDK.TESTNET,
+      getIt(),
+      getIt(),
     ),
   );
 }

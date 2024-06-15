@@ -73,14 +73,15 @@ class VotingService {
       return false;
     }
 
-    final account = await _sdk.accounts.account(accountId);
-    final balance = account.balances.firstWhereOrNull((element) => element.assetCode == nftCode);
+    final payments = await _sdk.payments.forAccount(accountId).execute();
 
-    if (balance == null) {
-      return false;
-    }
+    final payment = payments.records?.firstWhereOrNull((element) {
+      return element is PaymentOperationResponse &&
+          element.assetType == 'credit_alphanum12' &&
+          element.assetCode == nftCode;
+    });
 
-    return double.parse(balance.balance) == 0;
+    return payment != null;
   }
 
   Future<void> requestVotingToken(String postId, String issuerId, String code) async {

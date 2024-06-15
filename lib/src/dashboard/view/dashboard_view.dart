@@ -51,32 +51,74 @@ class _DashboardViewState extends State<DashboardView> {
               slivers: [
                 SliverFillRemaining(
                   child: Observer(
-                    builder: (_) => ListView.separated(
-                      itemCount: widget.viewModel.posts.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final post = widget.viewModel.posts[index];
+                    builder: (_) => widget.viewModel.posts.isEmpty
+                        ? _EmptyView()
+                        : ListView.separated(
+                            itemCount: widget.viewModel.posts.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 16),
+                            itemBuilder: (context, index) {
+                              final post = widget.viewModel.posts[index];
 
-                        return SizedBox(
-                          height: 230,
-                          child: CaptionBox(
-                            postId: post.postId,
-                            nftCid: post.nftCid,
-                            date: post.createdAt.toDateString(),
-                            hideVoteButton: true,
-                            post: post,
-                            backgroundColor: context.moonColors?.krillin,
-                            text: post.question,
+                              return SizedBox(
+                                height: 230,
+                                child: CaptionBox(
+                                  postId: post.postId,
+                                  nftCid: post.nftCid,
+                                  date: post.createdAt.toDateString(),
+                                  hideVoteButton: true,
+                                  post: post,
+                                  backgroundColor: context.moonColors?.krillin,
+                                  text: post.question,
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: [
+          const SizedBox(height: 100),
+          const Icon(
+            MoonIcons.files_folder_open_32_regular,
+            size: 64,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No posts yet',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Create your first post',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 16),
+          MoonOutlinedButton(
+            buttonSize: MoonButtonSize.sm,
+            onTap: () => context.pushToStack(NavPaths.createpost.route()),
+            label: const Text('Create post'),
+          ),
+        ],
       ),
     );
   }

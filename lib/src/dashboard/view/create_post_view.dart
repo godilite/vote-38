@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -8,6 +10,7 @@ import 'package:html/parser.dart' as html;
 import 'package:http/http.dart' as http;
 import 'package:mobx/mobx.dart';
 import 'package:moon_design/moon_design.dart';
+import 'package:toastification/toastification.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:vote38/src/dashboard/view/attachment_button.dart';
 import 'package:vote38/src/dashboard/view_model/create_post_view_model.dart';
@@ -128,11 +131,29 @@ class _CreatePostViewState extends State<CreatePostView> {
     return ReactionBuilder(
       builder: (_) {
         return reaction(
-          (_) => [widget.viewModel.question, widget.viewModel.error],
+          (_) => [widget.viewModel.question, widget.viewModel.error, widget.viewModel.postState],
           (state) {
             _questionController.text = widget.viewModel.question;
             if (widget.viewModel.error == 'nftimagerequired') {
               showTutorial();
+            } else {
+              widget.viewModel.error = null;
+            }
+            switch (widget.viewModel.postState) {
+              case PostState.success:
+                toastification.show(
+                  title: const Text('Post created successfully'),
+                  type: ToastificationType.success,
+                  autoCloseDuration: const Duration(seconds: 2),
+                );
+                context.pushClearStack(NavPaths.dashboard.route());
+              case PostState.error:
+                toastification.show(
+                  title: Text(widget.viewModel.error!),
+                  autoCloseDuration: const Duration(seconds: 2),
+                  type: ToastificationType.error,
+                );
+              default:
             }
           },
           fireImmediately: true,
@@ -148,10 +169,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                 const SizedBox(width: 16),
                 Text(
                   'New poll',
-                  style: context.moonTypography?.heading.text32.copyWith(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: context.moonTypography?.heading.text32,
                 ),
                 const Spacer(),
                 AttachmentButton(
@@ -197,7 +215,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Text(
-                                  '${widget.viewModel.question.length}/70',
+                                  '${widget.viewModel.question.length}/120',
                                   textAlign: TextAlign.end,
                                   style: context.moonTypography?.heading.text16,
                                 ),
@@ -205,7 +223,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                             ),
                             backgroundColor: Colors.transparent,
                             expands: true,
-                            maxLength: 70,
+                            maxLength: 120,
                             maxLengthEnforcement: MaxLengthEnforcement.enforced,
                           ),
                           Padding(
@@ -319,21 +337,29 @@ class _CreatePostViewState extends State<CreatePostView> {
                   icon: SvgPicture.asset('assets/images/nft-sign.svg', width: 30),
                   buttonSize: MoonButtonSize.xl,
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: MoonButton(
-                      onTap: () async {
-                        await widget.viewModel.submitPost();
-                      },
-                      backgroundColor: context.moonColors?.bulma,
-                      textColor: context.moonColors?.gohan,
-                      // ignore: deprecated_member_use
-                      leading: SvgPicture.asset('assets/images/send.svg', color: context.moonColors?.gohan, width: 30),
-                      label: Text('Post', style: context.moonTypography?.heading.text24),
-                      buttonSize: MoonButtonSize.xl,
-                    ),
-                  ),
+                Observer(
+                  builder: (context) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: MoonButton(
+                          onTap: () async {
+                            await widget.viewModel.submitPost();
+                          },
+                          backgroundColor: context.moonColors?.bulma,
+                          textColor: context.moonColors?.gohan,
+                          leading:
+                              SvgPicture.asset('assets/images/send.svg', color: context.moonColors?.gohan, width: 30),
+                          label: widget.viewModel.postState == PostState.loading
+                              ? const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                )
+                              : Text('Post', style: context.moonTypography?.heading.text24),
+                          buttonSize: MoonButtonSize.xl,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

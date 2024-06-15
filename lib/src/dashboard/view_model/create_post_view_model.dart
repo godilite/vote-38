@@ -1,14 +1,24 @@
 import 'dart:typed_data';
-import 'dart:ui' as ui;
+import 'dart:ui';
 
+import 'package:dice_bear/dice_bear.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mobx/mobx.dart';
 import 'package:vote38/src/services/post_service.dart';
 import 'package:vote38/src/services/secure_storage.dart';
 import 'package:vote38/src/services/token_service.dart';
 
 part 'create_post_view_model.g.dart';
+
+enum PostState {
+  initial,
+  loading,
+  success,
+  error,
+}
 
 class CreatePostViewModel = _CreatePostViewModel with _$CreatePostViewModel;
 
@@ -23,7 +33,7 @@ abstract class _CreatePostViewModel with Store {
   ObservableMap<String, ObservableList<Observable<AccountEntryDataInput>>> options = ObservableMap();
 
   @observable
-  bool isLoading = false;
+  PostState postState = PostState.initial;
 
   @observable
   String question = '';
@@ -66,6 +76,18 @@ abstract class _CreatePostViewModel with Store {
   @observable
   FilePickerResult? filePickerResult;
 
+  @observable
+  String cid = '';
+
+  @computed
+  bool get canAddNft => nftName.isNotEmpty && code.isNotEmpty && limit.isNotEmpty && image != null;
+
+  @observable
+  bool isNftLoading = false;
+
+  @observable
+  bool isNftEdited = false;
+
   @computed
   bool get canSubmit =>
       question.isNotEmpty &&
@@ -87,29 +109,31 @@ abstract class _CreatePostViewModel with Store {
       issuerAccountSeed = accountOwnerSeed!;
       generatePostAccountSeed();
       generateOptionAccountSeed();
+      await getCanvasImageAsBytes();
     }
-    reaction((_) => nftName, (_) {
-      if (nftName.isNotEmpty && filePickerResult == null) {
-        getCanvasImageAsBytes(nftName);
-      } else if (nftName.isEmpty && filePickerResult == null) {
-        image = null;
-      }
+    reaction((_) => [nftName, code, limit, image], (_) {
+      isNftEdited = true;
     });
   }
 
   @action
   Future<void> submitPost() async {
-    isLoading = true;
+    postState = PostState.loading;
     if (image == null) {
       error = 'nftimagerequired';
-      isLoading = false;
+      postState = PostState.error;
       return;
     }
-    if (canSubmit) {
+    if (question.isNotEmpty &&
+        limit.isNotEmpty &&
+        code.isNotEmpty &&
+        issuerId.isNotEmpty &&
+        postAccountSeed.isNotEmpty &&
+        nftName.isNotEmpty &&
+        cid.isNotEmpty &&
+        image != null) {
       try {
         final postAccount = await _postService.createAccount(issuerAccountSeed, postAccountSeed, true);
-        // upload image to IPFS and get the CID
-        final cid = await _tokenService.createNFT(code, issuerAccountSeed, nftName, question, imageStream);
         // mint NFT
         final success = await _tokenService.mintNFT(code, cid, issuerAccountSeed, postAccount.accountSecretSeed, limit);
 
@@ -125,14 +149,6 @@ abstract class _CreatePostViewModel with Store {
 
         await _postService.setTrustlines(optionSeeds, code, issuerId, limit);
 
-        // save post data
-        for (final entry in options.entries) {
-          final seed = entry.key;
-          final data = entry.value.map((e) => e.value).toList();
-
-          await _postService.saveAccountData(seed, data);
-        }
-
         final postData = [
           AccountEntryDataInput('question', question),
           if (webLink.isNotEmpty) AccountEntryDataInput('webLink', webLink),
@@ -142,18 +158,51 @@ abstract class _CreatePostViewModel with Store {
           AccountEntryDataInput('nftCid', cid),
         ];
 
-        await _postService.saveAccountData(postAccountSeed, postData);
-
         await _postService.storeInLocalStorage(postAccountSeed);
+        final Map<String, List<AccountEntryDataInput>> optionsAndData = {};
+        for (final entry in options.entries) {
+          optionsAndData[entry.key] = entry.value.map((e) => e.value).toList();
+        }
 
-        await _postService.saveToRemoteStorage(postAccountSeed, limit, code, issuerId, postData);
+        await _postService.saveToRemoteStorage(
+          postAccountSeed,
+          limit,
+          code,
+          issuerId,
+          postData,
+          optionsAndData,
+        );
+        dispose();
       } catch (e) {
-        error = e.toString();
+        if (e is CreateAccountException) {
+          error = e.message;
+        } else if (e is ManageDataException) {
+          error = e.toString();
+        } else {
+          error = e.toString();
+        }
         debugPrint(error);
       } finally {
-        isLoading = false;
+        postState = error == null ? PostState.success : PostState.error;
       }
+    } else {
+      error = 'All fields are required';
+      postState = PostState.error;
     }
+  }
+
+  Future<bool> uploadNft() async {
+    error = null;
+    isNftLoading = true;
+    // upload image to IPFS and get the CID
+    try {
+      cid = await _tokenService.createNFT(code, issuerAccountSeed, nftName, question, imageStream);
+      isNftEdited = false;
+    } catch (e) {
+      error = 'Error uploading NFT';
+    }
+    isNftLoading = false;
+    return error == null;
   }
 
   void generatePostAccountSeed() {
@@ -223,55 +272,61 @@ abstract class _CreatePostViewModel with Store {
     }
   }
 
-  Future<void> getCanvasImageAsBytes(String str) async {
-    final textStyle = ui.TextStyle(
-      fontSize: 40.0,
-      foreground: Paint()
-        ..shader = ui.Gradient.sweep(
-          const Offset(100, 100),
-          const <Color>[
-            Colors.blue,
-            Colors.red,
-            Colors.green,
-            Colors.blue,
-          ],
-          const <double>[0.0, 0.3, 0.6, 1.0],
-        ),
-      fontWeight: FontWeight.w700,
-      textBaseline: TextBaseline.alphabetic,
-    );
-    final paragraphStyle = ui.ParagraphStyle(
-      fontStyle: ui.FontStyle.normal,
-      fontFamily: 'RubikGlitchPop',
-      textAlign: TextAlign.center,
+  Future<void> getCanvasImageAsBytes() async {
+    final avatar = DiceBearBuilder(seed: postAccountSeed, sprite: DiceBearSprite.croodles).build();
+    final data = await svgToPng(avatar.svgUri.toString());
+    final uint = Uint8List.view(data.buffer);
+
+    imageStream = getCanvasImageAsStream(uint);
+
+    image = Image.memory(uint);
+  }
+
+  Future<Uint8List> svgToPng(String url) async {
+    final pictureInfo = SvgPicture.network(
+      url,
+      fit: BoxFit.cover,
+      placeholderBuilder: (_) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
     );
 
-    final builder = ui.ParagraphBuilder(paragraphStyle)
-      ..pushStyle(textStyle)
-      ..addText('$str NFT (◑‿◐)');
+    final loader = pictureInfo.bytesLoader;
 
-    final paragraph = builder.build();
-    paragraph.layout(const ui.ParagraphConstraints(width: 200));
+    final info = await vg.loadPicture(loader, null);
 
-    final recorder = ui.PictureRecorder();
-    final newCanvas = ui.Canvas(recorder);
-    newCanvas.drawColor(Colors.white, BlendMode.src);
-    newCanvas.drawParagraph(paragraph, const Offset(0, 10));
+    final image = info.picture.toImageSync(300, 250);
+    final byteData = await image.toByteData(format: ImageByteFormat.png);
 
-    final picture = recorder.endRecording();
-    final res = await picture.toImage(200, 200);
-    final ByteData? data = await res.toByteData(format: ui.ImageByteFormat.png);
-
-    if (data != null) {
-      final uint = Uint8List.view(data.buffer);
-
-      imageStream = getCanvasImageAsStream(uint);
-
-      image = Image.memory(uint);
+    if (byteData == null) {
+      throw Exception('Unable to convert SVG to PNG');
     }
+
+    final pngBytes = byteData.buffer.asUint8List();
+    return pngBytes;
   }
 
   Stream<Uint8List> getCanvasImageAsStream(Uint8List bytes) async* {
     yield bytes;
+  }
+
+  void dispose() {
+    options.clear();
+    postState = PostState.initial;
+    question = '';
+    webLink = '';
+    videoLink = '';
+    imageLink = '';
+    limit = '';
+    code = '';
+    issuerId = '';
+    image = null;
+    error = null;
+    postAccountSeed = '';
+    issuerAccountSeed = '';
+    nftName = '';
+    filePickerResult = null;
   }
 }

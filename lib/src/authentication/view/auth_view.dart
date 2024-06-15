@@ -50,12 +50,6 @@ class _AuthViewState extends State<AuthView> {
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return ReactionBuilder(
       builder: (_) {
@@ -116,6 +110,7 @@ class _AuthViewState extends State<AuthView> {
                 activeFillColor: context.moonColors?.roshi,
                 activeBorderColor: context.moonColors?.roshi,
                 selectedBorderColor: context.moonColors?.roshi,
+                inactiveBorderColor: context.moonColors?.trunks,
                 onCompleted: _onPinChange,
                 validator: (value) => null,
                 errorBuilder: (context, error) {

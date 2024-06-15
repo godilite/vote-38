@@ -235,7 +235,6 @@ class DropDownMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         MoonDropdown(
           show: showMenu,
@@ -273,6 +272,7 @@ class DropDownMenu extends StatelessWidget {
           buttonName == "Testnet"
               ? 'Testnet is a test network that allows you to test the platform without using real money.'
               : 'Mainnet is the main network where you can use real money to vote.',
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: context.moonColors?.trunks,
             fontSize: 14,

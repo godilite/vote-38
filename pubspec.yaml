@@ -12,6 +12,7 @@ dependencies:
   cloud_firestore: 5.0.1
   connectivity_plus: ^6.0.3
   cupertino_icons: ^1.0.6
+  dice_bear: ^0.1.7
   file_picker: ^8.0.3
   firebase_auth: 5.1.0
   firebase_core: 3.1.0
@@ -41,7 +42,7 @@ dependencies:
   random_avatar: ^0.0.8
   share_plus: ^9.0.0
   shimmer: ^3.0.0
-  stellar_flutter_sdk: ^1.8.1
+  stellar_flutter_sdk: 1.8.0
   toastification: ^2.0.0
   tutorial_coach_mark: ^1.2.11
   url_launcher: ^6.3.0

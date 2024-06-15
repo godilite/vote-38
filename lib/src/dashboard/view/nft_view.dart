@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:mobx/mobx.dart';
 import 'package:moon_design/moon_design.dart';
@@ -50,7 +51,7 @@ class _NftViewState extends State<NftView> {
                 const SizedBox(width: 10),
                 Text(
                   'Mint NFT',
-                  style: context.moonTypography?.heading.text40,
+                  style: context.moonTypography?.heading.text32,
                 ),
                 const Spacer(),
                 AttachmentButton(
@@ -78,6 +79,9 @@ class _NftViewState extends State<NftView> {
                     controller: _limitController,
                     onChanged: (value) => widget.viewModel.limit = value,
                     activeBorderColor: context.moonColors?.krillin,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                    ],
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 20),
@@ -87,7 +91,7 @@ class _NftViewState extends State<NftView> {
                   ),
                   const SizedBox(height: 10),
                   MoonTextInput(
-                    hintText: 'Enter NFT token name',
+                    hintText: 'e.g "Vote38 NFT"',
                     controller: _nftNameController,
                     activeBorderColor: context.moonColors?.krillin,
                     onChanged: (value) => widget.viewModel.nftName = value,
@@ -102,6 +106,10 @@ class _NftViewState extends State<NftView> {
                     controller: _codeController,
                     hintText: 'Enter NFT token code (Max 12 characters)',
                     activeBorderColor: context.moonColors?.krillin,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(12),
+                      FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9]')),
+                    ],
                     onChanged: (value) => widget.viewModel.code = value,
                   ),
                   Observer(
@@ -114,7 +122,7 @@ class _NftViewState extends State<NftView> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const SizedBox(height: 20),
-                              const Text('Preview'),
+                              Text('Preview', style: context.moonTypography?.caption.text20),
                               const SizedBox(height: 15),
                               widget.viewModel.image ?? const SizedBox(),
                               const SizedBox(height: 30),
@@ -143,16 +151,43 @@ class _NftViewState extends State<NftView> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  MoonFilledButton(
-                    buttonSize: MoonButtonSize.lg,
-                    backgroundColor: context.moonColors?.bulma,
-                    onTap: () async {
-                      Navigator.of(context).pop();
+                  Observer(
+                    builder: (context) {
+                      return Column(
+                        children: [
+                          if (widget.viewModel.isNftLoading)
+                            Text(
+                              'Uploading NFT... Do not close the app, this may take a while',
+                              style: TextStyle(color: context.moonColors?.dodoria, fontSize: 16),
+                            ),
+                          MoonFilledButton(
+                            buttonSize: MoonButtonSize.lg,
+                            backgroundColor:
+                                widget.viewModel.canAddNft ? context.moonColors?.bulma : context.moonColors?.trunks,
+                            onTap: () async {
+                              if (widget.viewModel.canAddNft) {
+                                await widget.viewModel.uploadNft();
+                              } else {
+                                MoonToast.show(
+                                  context,
+                                  label: const Text('NFT is not ready to upload'),
+                                  content: const Text('Please fill all the fields'),
+                                );
+                              }
+                            },
+                            label: widget.viewModel.isNftLoading
+                                ? const CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  )
+                                : Text(
+                                    'Upload NFT',
+                                    style: context.moonTypography?.heading.text20
+                                        .copyWith(color: context.moonColors?.gohan),
+                                  ),
+                          ),
+                        ],
+                      );
                     },
-                    label: Text(
-                      'Attach NFT',
-                      style: context.moonTypography?.heading.text20.copyWith(color: context.moonColors?.gohan),
-                    ),
                   ),
                 ],
               ),

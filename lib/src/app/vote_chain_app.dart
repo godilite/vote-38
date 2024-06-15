@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:moon_design/moon_design.dart';
 import 'package:toastification/toastification.dart';
 import 'package:vote38/src/navigation/router.dart';
+import 'package:vote38/src/settings/model/setting.dart';
 
 GoRouter? appRouter;
 
@@ -25,36 +26,42 @@ class _VoteChainAppState extends State<VoteChainApp> {
   @override
   Widget build(BuildContext context) {
     return ToastificationWrapper(
-      child: MaterialApp.router(
-        title: 'Vote Chain',
-        theme: ThemeData.light().copyWith(
-          appBarTheme: Theme.of(context).appBarTheme.copyWith(systemOverlayStyle: SystemUiOverlayStyle.light),
-          splashFactory: NoSplash.splashFactory,
-          scaffoldBackgroundColor: const Color(0xFFFFFFFF),
-          textTheme: ThemeData.light().textTheme.apply(fontFamily: 'RedHatText'),
-          extensions: <ThemeExtension<dynamic>>[
-            MoonTheme(
-              tokens: MoonTokens.light,
+      child: ValueListenableBuilder(
+        valueListenable: Hive.box<Setting>(Setting.boxName).listenable(),
+        builder: (_, box, ___) {
+          final settings = box.get('settings', defaultValue: Setting(isDarkMode: true))!;
+          return MaterialApp.router(
+            title: 'Vote Chain',
+            theme: ThemeData.light().copyWith(
+              appBarTheme: Theme.of(context).appBarTheme.copyWith(systemOverlayStyle: SystemUiOverlayStyle.light),
+              splashFactory: NoSplash.splashFactory,
+              scaffoldBackgroundColor: const Color(0xFFFFFFFF),
+              textTheme: ThemeData.light().textTheme.apply(fontFamily: 'RedHatText'),
+              extensions: <ThemeExtension<dynamic>>[
+                MoonTheme(
+                  tokens: MoonTokens.light,
+                ),
+              ],
             ),
-          ],
-        ),
-        darkTheme: ThemeData.dark().copyWith(
-          splashFactory: NoSplash.splashFactory,
-          scaffoldBackgroundColor: const Color(0xFF000000),
-          textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'RedHatText'),
-          extensions: <ThemeExtension<dynamic>>[
-            MoonTheme(
-              tokens: MoonTokens.dark,
+            darkTheme: ThemeData.dark().copyWith(
+              splashFactory: NoSplash.splashFactory,
+              scaffoldBackgroundColor: const Color(0xFF000000),
+              textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'RedHatText'),
+              extensions: <ThemeExtension<dynamic>>[
+                MoonTheme(
+                  tokens: MoonTokens.dark,
+                ),
+              ],
             ),
-          ],
-        ),
-        themeMode: ThemeMode.light,
-        routerConfig: appRouter,
-        builder: (context, child) {
-          return NotificationListenerWrapper(
-            child: Scaffold(
-              body: child,
-            ),
+            themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            routerConfig: appRouter,
+            builder: (context, child) {
+              return NotificationListenerWrapper(
+                child: Scaffold(
+                  body: child,
+                ),
+              );
+            },
           );
         },
       ),
@@ -77,6 +84,7 @@ class _NotificationListenerWrapperState extends State<NotificationListenerWrappe
       toastification.show(
         type: ToastificationType.info,
         showProgressBar: true,
+        autoCloseDuration: const Duration(seconds: 2),
         title: Text('NFT Minting Progress ${event.value}'),
       );
     });

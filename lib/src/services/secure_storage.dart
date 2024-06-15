@@ -18,6 +18,8 @@ abstract class SecureStorage {
   Future<String?> read(String key);
 
   Future<void> delete(String key);
+
+  Future<void> deleteAll();
 }
 
 class SecureStorageImpl implements SecureStorage {
@@ -38,5 +40,10 @@ class SecureStorageImpl implements SecureStorage {
   @override
   Future<void> delete(String key) async {
     await _flutterSecureStorage.delete(key: key);
+  }
+
+  @override
+  Future<void> deleteAll() async {
+    await _flutterSecureStorage.deleteAll();
   }
 }

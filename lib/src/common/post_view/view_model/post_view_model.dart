@@ -19,6 +19,13 @@ enum VoteStatus {
   owner,
 }
 
+enum CastVoteStatus {
+  initial,
+  loading,
+  success,
+  error,
+}
+
 class PostViewModel = _PostViewModel with _$PostViewModel;
 
 abstract class _PostViewModel with Store {
@@ -61,6 +68,9 @@ abstract class _PostViewModel with Store {
   bool isSelectAll = false;
 
   @observable
+  CastVoteStatus castVoteStatus = CastVoteStatus.initial;
+
+  @observable
   ObservableList<VotingRequestData> requestsToVote = ObservableList();
 
   @observable
@@ -87,24 +97,27 @@ abstract class _PostViewModel with Store {
         }
         return;
       }
-
-      final isCanVote = await _votingService.canVote(nftMeta!.code, nftMeta!.issuer);
-      final hasRequestedVotingToken = _votingService.hasRequestedVotingToken(postId);
-
-      if (isCanVote) {
-        voteStatus = VoteStatus.canVote;
-      } else {
-        final hasVoted = await _votingService.hasVoted(nftMeta!.code);
-        if (hasVoted) {
-          voteStatus = VoteStatus.alreadyVoted;
-        } else if (hasRequestedVotingToken) {
-          voteStatus = VoteStatus.requestedToken;
-        } else {
-          voteStatus = VoteStatus.restricted;
-        }
-      }
+      await updateVotingStatus();
     } catch (e) {
       debugPrint(e.toString());
+    }
+  }
+
+  Future<void> updateVotingStatus() async {
+    final isCanVote = await _votingService.canVote(nftMeta!.code, nftMeta!.issuer);
+    final hasRequestedVotingToken = _votingService.hasRequestedVotingToken(postId);
+
+    if (isCanVote) {
+      voteStatus = VoteStatus.canVote;
+    } else {
+      final hasVoted = await _votingService.hasVoted(nftMeta!.code);
+      if (hasVoted) {
+        voteStatus = VoteStatus.alreadyVoted;
+      } else if (hasRequestedVotingToken) {
+        voteStatus = VoteStatus.requestedToken;
+      } else {
+        voteStatus = VoteStatus.restricted;
+      }
     }
   }
 
@@ -130,19 +143,21 @@ abstract class _PostViewModel with Store {
 
   @action
   Future<void> vote(String optionId) async {
-    isLoading = true;
+    castVoteStatus = CastVoteStatus.loading;
     try {
       await _votingService.vote(optionId, nftMeta!.code, nftMeta!.issuer);
+      castVoteStatus = CastVoteStatus.success;
     } catch (e) {
+      castVoteStatus = CastVoteStatus.error;
       debugPrint(e.toString());
     }
-    isLoading = false;
   }
 
   @action
   Future<void> getResults() async {
+    await updateVotingStatus();
     await _postService.getVotingOptionsByPost(postId).then((value) {
-      rows = mapOptionsAccountToPost(value, nftMeta!.code);
+      rows = mapOptionsAccountToPost(value, post, nftMeta!.code);
     });
   }
 

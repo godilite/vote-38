@@ -15,7 +15,7 @@ abstract class _TimelineViewModel with Store {
     postStream();
   }
 
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? firestoreSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? firestoreSubscription;
 
   @observable
   bool isLoading = false;
@@ -25,15 +25,20 @@ abstract class _TimelineViewModel with Store {
 
   @action
   void postStream() {
-    firestoreSubscription = _firestore.collection('votechainupdate').doc('post').snapshots().listen((event) {
-      if (event.data() == null) {
-        return;
-      }
-      final docs = event.data()!;
-      docs.forEach((key, value) {
-        final post = Post.fromDocument(key, value as Map<String, dynamic>);
+    DocumentChange<Map<String, dynamic>>? change;
+    firestoreSubscription = _firestore
+        .collection('votechainupdate')
+        .where('type', isEqualTo: 'post')
+        .orderBy('createdAt', descending: true)
+        .limit(10)
+        .snapshots()
+        .listen((event) {
+      change = event.docChanges.first;
+      if (change!.type == DocumentChangeType.added) {
+        final data = change!.doc.data();
+        final post = Post.fromDocument(data ?? {});
         posts.add(post);
-      });
+      }
     });
   }
 

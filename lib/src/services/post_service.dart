@@ -1,10 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
+import 'package:vote38/src/common/models/post.dart';
 import 'package:vote38/src/services/mapper/account_mapper.dart';
 import 'package:vote38/src/services/model/account.dart';
 
@@ -18,10 +17,10 @@ class AccountEntryDataInput {
 abstract class PostService {
   KeyPair createKeyPair();
   Future<VoteAccount> createAccount(String sponsorSeed, String accountSeed, bool isPostAccount);
-  Future<void> saveAccountData(String secretSeed, List<AccountEntryDataInput> data);
+  // Future<void> saveAccountData(String secretSeed, List<AccountEntryDataInput> data);
   Future<void> setTrustlines(List<String> accounts, String currencyCode, String issuer, String limit);
   Future<void> storeInLocalStorage(String secretSeed);
-  Future<List<VoteAccount>> postsForAccount(String secretSeed);
+  Stream<List<Post>> postsForAccount(String secretSeed);
   Future<List<VoteAccount>> getVotingOptionsByPost(String postId);
   Future<NftMeta> getNftMeta(String nftcid);
   Stream<PaymentOperationResponse> subscribeOptionVoting(String accountId);
@@ -32,6 +31,7 @@ abstract class PostService {
     String code,
     String issuerId,
     List<AccountEntryDataInput> data,
+    Map<String, List<AccountEntryDataInput>> options,
   );
 }
 
@@ -83,8 +83,11 @@ class PostServiceImpl implements PostService {
 
     if (!response.success) {
       if (response.extras?.resultCodes?.operationsResultCodes?.isNotEmpty != null) {
-        final operationResult = response.extras!.resultCodes!.operationsResultCodes![0];
-        if (operationResult == 'op_already_exists') {
+        final operationResult = response.extras!.resultCodes!.operationsResultCodes;
+        if (operationResult?.contains('op_line_full') ?? false) {
+          throw CreateAccountException('Insufficient balance to create post');
+        }
+        if (operationResult?.contains('op_already_exists') ?? false) {
           final account = await sdk.accounts.account(accountId);
           return _accountResponseMapper.mapAccountResponse(account, accountSeed);
         }
@@ -98,31 +101,31 @@ class PostServiceImpl implements PostService {
     return _accountResponseMapper.mapAccountResponse(account, accountSeed);
   }
 
-  @override
-  Future<void> saveAccountData(String secretSeed, List<AccountEntryDataInput> data) async {
-    final kp = KeyPair.fromSecretSeed(secretSeed);
-    final account = await sdk.accounts.account(kp.accountId);
+  // @override
+  // Future<void> saveAccountData(String secretSeed, List<AccountEntryDataInput> data) async {
+  //   final kp = KeyPair.fromSecretSeed(secretSeed);
+  //   final account = await sdk.accounts.account(kp.accountId);
 
-    for (final entry in data) {
-      final key = entry.key;
-      final value = entry.value;
+  //   for (final entry in data) {
+  //     final key = entry.key;
+  //     final value = entry.value;
 
-      final list = value.codeUnits;
-      final valueBytes = Uint8List.fromList(list);
+  //     final list = value.codeUnits;
+  //     final valueBytes = Uint8List.fromList(list);
 
-      final operation = ManageDataOperationBuilder(key, valueBytes).build();
+  //     final operation = ManageDataOperationBuilder(key, valueBytes);
 
-      final transaction = TransactionBuilder(account).addOperation(operation).build();
+  //     final transaction = TransactionBuilder(account).addOperation(operation.build()).build();
 
-      transaction.sign(kp, network);
-      try {
-        await sdk.submitTransaction(transaction);
-      } catch (e) {
-        debugPrint('Error saving account data: $e');
-        throw ManageDataException('Error saving account data: $e');
-      }
-    }
-  }
+  //     transaction.sign(kp, network);
+  //     try {
+  //       await sdk.submitTransaction(transaction);
+  //     } catch (e, st) {
+  //       debugPrint('Error saving account data: $e $st');
+  //       throw ManageDataException('Error saving account data: $e');
+  //     }
+  //   }
+  // }
 
   @override
   Future<void> setTrustlines(List<String> accounts, String currencyCode, String issuer, String limit) async {
@@ -159,6 +162,7 @@ class PostServiceImpl implements PostService {
     String code,
     String issuerId,
     List<AccountEntryDataInput> data,
+    Map<String, List<AccountEntryDataInput>> options,
   ) async {
     final kp = KeyPair.fromSecretSeed(secretSeed);
 
@@ -170,13 +174,29 @@ class PostServiceImpl implements PostService {
     mappedJson['limit'] = limit;
     mappedJson['code'] = code;
     mappedJson['issuerId'] = issuerId;
-
-    await _firestore.collection('votechainupdate').doc('post').set(
-      {
-        kp.accountId: mappedJson,
+    mappedJson['type'] = 'post';
+    mappedJson['postId'] = kp.accountId;
+    mappedJson['options'] = options.map(
+      (key, value) {
+        final optionKp = KeyPair.fromSecretSeed(key);
+        return MapEntry(
+          optionKp.accountId,
+          value
+              .map(
+                (e) => {
+                  'key': e.key,
+                  'value': e.value,
+                },
+              )
+              .toList(),
+        );
       },
-      SetOptions(merge: true),
     );
+
+    await _firestore.collection('votechainupdate').doc(kp.accountId).set(
+          mappedJson,
+          SetOptions(merge: true),
+        );
   }
 
   @override
@@ -191,11 +211,16 @@ class PostServiceImpl implements PostService {
   }
 
   @override
-  Future<List<VoteAccount>> postsForAccount(String secretSeed) async {
+  Stream<List<Post>> postsForAccount(String secretSeed) {
     final kp = KeyPair.fromSecretSeed(secretSeed);
-    return sdk.accounts.forSponsor(kp.accountId).execute().then(
-          (value) => value.records?.map((e) => _accountResponseMapper.mapAccountResponse(e, secretSeed)).toList() ?? [],
-        );
+    return _firestore.collection('votechainupdate').where('issuerId', isEqualTo: kp.accountId).snapshots().map((event) {
+      final List<Post> posts = [];
+      for (final element in event.docChanges) {
+        final data = element.doc.data();
+        posts.add(Post.fromDocument(data ?? {}));
+      }
+      return posts;
+    });
   }
 
   @override
