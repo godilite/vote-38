@@ -143,11 +143,22 @@ class _CaptionBoxState extends State<CaptionBox> {
                               MoonChip(
                                 chipSize: MoonChipSize.sm,
                                 backgroundColor: context.moonColors?.roshi,
+                                onTap: () async {
+                                  switch (viewModel.voteStatus) {
+                                    case VoteStatus.restricted:
+                                      await viewModel.requestVotingToken();
+                                    case VoteStatus.canVote:
+                                      context.pushToStack(NavPaths.postDetail.route(extra: viewModel));
+                                    case VoteStatus.alreadyVoted:
+                                    case VoteStatus.requestedToken:
+                                    default:
+                                  }
+                                },
                                 label: Text(
                                   switch (viewModel.voteStatus) {
                                     VoteStatus.canVote => 'Eligible',
                                     VoteStatus.alreadyVoted => 'Voted',
-                                    VoteStatus.requestedToken => 'Requesting token',
+                                    VoteStatus.requestedToken => 'Waiting for token',
                                     VoteStatus.restricted => 'Join to vote',
                                     _ => 'Loading...',
                                   },

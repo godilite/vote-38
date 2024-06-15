@@ -135,6 +135,7 @@ abstract class _PostViewModel with Store {
     isLoading = true;
     try {
       await _votingService.requestVotingToken(postId, nftMeta!.issuer, nftMeta!.code);
+      voteStatus = VoteStatus.requestedToken;
     } catch (e) {
       debugPrint(e.toString());
     }

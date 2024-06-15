@@ -282,6 +282,7 @@ class DropDownMenu extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'You can switch between networks at any time in settings.',
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: context.moonColors?.trunks,
             fontSize: 14,

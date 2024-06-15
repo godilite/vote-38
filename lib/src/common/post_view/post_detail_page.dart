@@ -110,74 +110,90 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                             color: context.moonColors?.krillin60,
                                             borderRadius: BorderRadius.circular(20),
                                           ),
-                                          child: MoonAccordion<Widget>(
-                                            accordionSize: MoonAccordionSize.lg,
-                                            hasContentOutside: true,
-                                            label: Row(
-                                              children: [
-                                                Text(
-                                                  result.name,
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontFamily: 'RedHatText',
-                                                  ),
-                                                ),
-                                                const Spacer(),
-                                                SizedBox(
-                                                  width: 100,
-                                                  child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.end,
-                                                    children: [
-                                                      Text(
-                                                        result.votes,
-                                                        style: context.moonTypography?.heading.text18
-                                                            .copyWith(color: context.moonColors?.bulma),
+                                          child: Stack(
+                                            children: [
+                                              MoonAccordion<Widget>(
+                                                accordionSize: MoonAccordionSize.lg,
+                                                label: Row(
+                                                  children: [
+                                                    Text(
+                                                      result.name,
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontFamily: 'RedHatText',
                                                       ),
-                                                      const SizedBox(width: 10),
-                                                      if (widget.viewModel.voteStatus != VoteStatus.owner)
-                                                        MoonButton(
-                                                          buttonSize: MoonButtonSize.sm,
-                                                          backgroundColor: context.moonColors?.chichi,
-                                                          onTap: () async {
-                                                            await widget.viewModel.vote(result.accountId);
-                                                          },
-                                                          label: Text(
-                                                            'Vote',
-                                                            style: TextStyle(
-                                                              color: context.moonColors?.gohan,
-                                                              fontSize: 14,
-                                                              fontFamily: 'RedHatText',
-                                                              fontWeight: FontWeight.w500,
+                                                    ),
+                                                    const Spacer(),
+                                                    Text(
+                                                      result.votes,
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontFamily: 'RedHatText',
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                children: result.data.map((e) {
+                                                  return ListTile(
+                                                    title: Text(
+                                                      e.key,
+                                                      style: TextStyle(
+                                                        color: context.moonColors?.bulma,
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontFamily: 'RedHatText',
+                                                      ),
+                                                    ),
+                                                    subtitle: Text(
+                                                      e.value,
+                                                      style: TextStyle(
+                                                        color: context.moonColors?.bulma,
+                                                        fontSize: 14,
+                                                        fontFamily: 'RedHatText',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              ),
+                                              if (widget.viewModel.voteStatus != VoteStatus.owner &&
+                                                  widget.viewModel.voteStatus == VoteStatus.canVote)
+                                                Positioned(
+                                                  right: 40,
+                                                  top: 4,
+                                                  child: SizedBox(
+                                                    width: 70,
+                                                    child: MoonButton(
+                                                      buttonSize: MoonButtonSize.md,
+                                                      isFullWidth: true,
+                                                      backgroundColor: context.moonColors?.chichi,
+                                                      onTap: () async {
+                                                        if (widget.viewModel.castVoteStatus == CastVoteStatus.loading) {
+                                                          return;
+                                                        }
+                                                        await _showConfirmModal(context, result.accountId);
+                                                      },
+                                                      label: widget.viewModel.castVoteStatus == CastVoteStatus.loading
+                                                          ? CircularProgressIndicator(
+                                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                                context.moonColors!.gohan,
+                                                              ),
+                                                              strokeWidth: 2,
+                                                            )
+                                                          : Text(
+                                                              'Vote',
+                                                              style: TextStyle(
+                                                                color: context.moonColors?.gohan,
+                                                                fontSize: 14,
+                                                                fontFamily: 'RedHatText',
+                                                                fontWeight: FontWeight.w500,
+                                                              ),
                                                             ),
-                                                          ),
-                                                        ),
-                                                    ],
+                                                    ),
                                                   ),
                                                 ),
-                                              ],
-                                            ),
-                                            children: result.data.map((e) {
-                                              return ListTile(
-                                                title: Text(
-                                                  e.key,
-                                                  style: TextStyle(
-                                                    color: context.moonColors?.bulma,
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontFamily: 'RedHatText',
-                                                  ),
-                                                ),
-                                                subtitle: Text(
-                                                  e.value,
-                                                  style: TextStyle(
-                                                    color: context.moonColors?.bulma,
-                                                    fontSize: 14,
-                                                    fontFamily: 'RedHatText',
-                                                  ),
-                                                ),
-                                              );
-                                            }).toList(),
+                                            ],
                                           ),
                                         );
                                       },
@@ -221,35 +237,37 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           builder: (context) {
                             return Wrap(
                               children: [
-                                if (widget.viewModel.voteStatus != VoteStatus.owner)
+                                if (widget.viewModel.voteStatus != VoteStatus.owner &&
+                                    widget.viewModel.voteStatus != VoteStatus.canVote)
                                   MoonFilledButton(
-                                    buttonSize: MoonButtonSize.sm,
+                                    buttonSize: MoonButtonSize.lg,
                                     backgroundColor: context.moonColors?.roshi,
                                     onTap: () async {
                                       switch (widget.viewModel.voteStatus) {
                                         case VoteStatus.restricted:
                                           await widget.viewModel.requestVotingToken();
-                                        case VoteStatus.canVote:
                                         case VoteStatus.alreadyVoted:
                                         case VoteStatus.requestedToken:
                                         default:
                                       }
                                     },
-                                    label: Text(
-                                      switch (widget.viewModel.voteStatus) {
-                                        VoteStatus.canVote => 'Vote',
-                                        VoteStatus.alreadyVoted => 'Voted',
-                                        VoteStatus.requestedToken => 'Requesting token',
-                                        VoteStatus.restricted => 'Request token',
-                                        _ => 'Loading...',
-                                      },
-                                      style: TextStyle(
-                                        color: context.moonColors?.gohan,
-                                        fontSize: 14,
-                                        fontFamily: 'RedHatText',
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                    label: widget.viewModel.voteStatus == VoteStatus.alreadyVoted
+                                        ? const Icon(MoonIcons.generic_check_rounded_32_regular)
+                                        : Text(
+                                            switch (widget.viewModel.voteStatus) {
+                                              VoteStatus.canVote => 'Vote',
+                                              VoteStatus.alreadyVoted => 'Voted',
+                                              VoteStatus.requestedToken => 'Requesting token',
+                                              VoteStatus.restricted => 'Request token',
+                                              _ => 'Loading...',
+                                            },
+                                            style: TextStyle(
+                                              color: context.moonColors?.gohan,
+                                              fontSize: 14,
+                                              fontFamily: 'RedHatText',
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
                                   )
                                 else if (widget.viewModel.requestsToVote.isNotEmpty)
                                   MoonFilledButton(
@@ -364,6 +382,81 @@ class _PostDetailPageState extends State<PostDetailPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showConfirmModal(BuildContext context, String accountId) {
+    return showMoonModal<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: context.moonColors?.gohan,
+          title: Text('Confirming Voting Request', style: context.moonTypography?.heading.text20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to vote for this option?',
+                style: TextStyle(fontSize: 16, color: context.moonColors?.trunks),
+              ),
+              const SizedBox(height: 10),
+              RichText(
+                text: TextSpan(
+                  text: 'This action will cost ',
+                  children: [
+                    TextSpan(
+                      text: '${widget.viewModel.nftMeta?.code}',
+                      style: context.moonTypography?.heading.text18,
+                    ),
+                  ],
+                  style: TextStyle(fontSize: 16, color: context.moonColors?.bulma),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'This action cannot be undone.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: context.moonColors?.chichi,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            MoonOutlinedButton(
+              onTap: () => Navigator.of(context).pop(),
+              borderColor: context.moonColors?.roshi,
+              label: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: context.moonColors?.bulma,
+                  fontSize: 14,
+                  fontFamily: 'RedHatText',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            MoonFilledButton(
+              backgroundColor: context.moonColors?.chichi,
+              onTap: () {
+                unawaited(widget.viewModel.vote(accountId));
+                // ignore: use_build_context_synchronously
+                Navigator.of(context).pop();
+              },
+              label: Text(
+                'Confirm',
+                style: TextStyle(
+                  color: context.moonColors?.bulma,
+                  fontSize: 14,
+                  fontFamily: 'RedHatText',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

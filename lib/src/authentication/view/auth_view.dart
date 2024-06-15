@@ -34,6 +34,7 @@ class _AuthViewState extends State<AuthView> {
         } else {
           MoonToast.show(
             context,
+            backgroundColor: context.moonColors?.chichi60,
             label: const Text('Pin code does not match'),
           );
         }
@@ -60,6 +61,7 @@ class _AuthViewState extends State<AuthView> {
               case LoginFailed():
                 MoonToast.show(
                   context,
+                  backgroundColor: context.moonColors?.chichi60,
                   isPersistent: false,
                   label: const Text('Invalid pin code'),
                 );
