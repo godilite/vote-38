@@ -6,6 +6,7 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:measure_size/measure_size.dart';
 import 'package:moon_design/moon_design.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'package:vote38/src/common/models/post.dart';
 import 'package:vote38/src/common/post_box_painter.dart';
 import 'package:vote38/src/common/post_view/view_model/post_view_model.dart';
@@ -248,7 +249,7 @@ class _CaptionBoxState extends State<CaptionBox> {
     await showMoonModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
-      height: 400,
+      height: 450,
       builder: (context) {
         return NftTokenView(nftMeta: viewModel.nftMeta);
       },
@@ -272,27 +273,52 @@ class NftTokenView extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            nftMeta!.name,
-            style: TextStyle(
-              color: context.moonColors?.bulma,
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
-            ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                'NFT Name: ',
+                style: TextStyle(
+                  color: context.moonColors?.bulma,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                nftMeta!.name,
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  color: context.moonColors?.bulma,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            nftMeta!.description,
-            style: TextStyle(
-              color: context.moonColors?.bulma,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+          Divider(color: context.moonColors?.bulma),
+          Row(
+            children: [
+              Text(
+                'Description: ',
+                style: TextStyle(
+                  color: context.moonColors?.bulma,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                nftMeta!.description,
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  color: context.moonColors?.bulma,
+                  fontSize: 15,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          CachedNetworkImage(imageUrl: nftMeta!.url, fit: BoxFit.cover),
+          Divider(color: context.moonColors?.bulma),
           Text(
             'Token code: ${nftMeta!.code}',
             style: TextStyle(
@@ -301,6 +327,20 @@ class NftTokenView extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
+          Divider(color: context.moonColors?.bulma),
+          Center(child: CachedNetworkImage(imageUrl: nftMeta!.url, fit: BoxFit.cover)),
+          MoonButton(
+            backgroundColor: context.moonColors?.roshi,
+            isFullWidth: true,
+            leading: const Icon(MoonIcons.generic_globe_32_light),
+            onTap: () async {
+              await launchUrlString(
+                'https://stellar.expert/explorer/testnet/asset/${nftMeta!.code}-${nftMeta!.issuer}',
+              );
+            },
+            label: const Text('View on stellar.expert'),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );

@@ -104,6 +104,22 @@ mixin _$PostViewModel on _PostViewModel, Store {
     });
   }
 
+  late final _$castVoteStatusAtom =
+      Atom(name: '_PostViewModel.castVoteStatus', context: context);
+
+  @override
+  CastVoteStatus get castVoteStatus {
+    _$castVoteStatusAtom.reportRead();
+    return super.castVoteStatus;
+  }
+
+  @override
+  set castVoteStatus(CastVoteStatus value) {
+    _$castVoteStatusAtom.reportWrite(value, super.castVoteStatus, () {
+      super.castVoteStatus = value;
+    });
+  }
+
   late final _$requestsToVoteAtom =
       Atom(name: '_PostViewModel.requestsToVote', context: context);
 
@@ -169,6 +185,14 @@ mixin _$PostViewModel on _PostViewModel, Store {
     return _$getResultsAsyncAction.run(() => super.getResults());
   }
 
+  late final _$reloadAsyncAction =
+      AsyncAction('_PostViewModel.reload', context: context);
+
+  @override
+  Future<void> reload() {
+    return _$reloadAsyncAction.run(() => super.reload());
+  }
+
   late final _$confirmVotersAsyncAction =
       AsyncAction('_PostViewModel.confirmVoters', context: context);
 
@@ -211,6 +235,7 @@ rows: ${rows},
 voteStatus: ${voteStatus},
 isLoading: ${isLoading},
 isSelectAll: ${isSelectAll},
+castVoteStatus: ${castVoteStatus},
 requestsToVote: ${requestsToVote},
 selectedOptions: ${selectedOptions}
     ''';
