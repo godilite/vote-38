@@ -248,7 +248,7 @@ class _CaptionBoxState extends State<CaptionBox> {
     await showMoonModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
-      height: 300,
+      height: 400,
       builder: (context) {
         return NftTokenView(nftMeta: viewModel.nftMeta);
       },
@@ -272,12 +272,13 @@ class NftTokenView extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             nftMeta!.name,
             style: TextStyle(
-              color: context.moonColors?.gohan,
-              fontSize: 16,
+              color: context.moonColors?.bulma,
+              fontSize: 20,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -286,12 +287,20 @@ class NftTokenView extends StatelessWidget {
             nftMeta!.description,
             style: TextStyle(
               color: context.moonColors?.bulma,
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
-          CachedNetworkImage(imageUrl: nftMeta!.url),
+          CachedNetworkImage(imageUrl: nftMeta!.url, fit: BoxFit.cover),
+          Text(
+            'Token code: ${nftMeta!.code}',
+            style: TextStyle(
+              color: context.moonColors?.bulma,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

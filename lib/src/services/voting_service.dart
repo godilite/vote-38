@@ -137,8 +137,9 @@ class VotingService {
 
   Stream<VotingRequestData?> subscribeRequests(String postId) {
     return _firestore.collection('votingrequests').doc(postId).snapshots().map((event) {
-      final data = event.data();
-      if (data != null) {
+      final result = event.data();
+      if (result != null && result.values.isNotEmpty) {
+        final data = result.values.first as Map<String, dynamic>;
         return VotingRequestData(
           voterId: data['accountId'] as String? ?? '',
           postId: data['postId'] as String? ?? '',

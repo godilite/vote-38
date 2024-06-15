@@ -41,10 +41,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 type: ToastificationType.success,
                 title: const Text('Vote cast successfully'),
               );
-              await widget.viewModel.getResults();
+              await widget.viewModel.reload();
             }
           },
-          fireImmediately: true,
         );
       },
       child: Scaffold(
