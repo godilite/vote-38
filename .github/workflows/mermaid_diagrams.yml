@@ -1,0 +1,36 @@
+name: Generate Mermaid Diagrams
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      
+    - name: Install Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+    
+    - name: Install Mermaid CLI
+      run: npm install -g @mermaid-js/mermaid-cli
+    
+    - name: Generate Diagrams
+      run: |
+        mkdir -p diagrams
+        mmdc -i user_voting_flow.mmd -o diagrams/user_voting_flow.png
+        mmdc -i post_creation_flow.mmd -o diagrams/post_creation_flow.png
+    
+    - name: Commit Diagrams
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add diagrams/*.png
+        git commit -m "Generate Mermaid diagrams"
+        git push
