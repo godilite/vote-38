@@ -28,6 +28,8 @@ jobs:
         mmdc -i post_creation_flow.mmd -o diagrams/post_creation_flow.png
     
     - name: Commit Diagrams
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         git config --global user.name 'github-actions'
         git config --global user.email 'github-actions@github.com'
