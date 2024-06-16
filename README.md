@@ -22,13 +22,36 @@ Vote38 is a decentralized, non-custodial opinion poll and voting platform built 
 
 ## Flow Diagrams
 
-## User Voting Flow
+### User Voting Flow
 
-![User Voting Flow](diagrams/user_voting_flow.png)
+```mermaid
+graph TD
+    A[User Sets Up Pin] --> B[Generate Stellar Account]
+    B --> C[User Timeline View]
+    C --> D[View Campaign Details]
+    D --> E[Request Voting Token]
+    E --> F[Campaign Creator Approves Request]
+    F --> G[User Receives NFT Token]
+    G --> H[User Votes by Sending NFT to Option Account]
+    H --> I[Vote Count Updated in Real-Time]
+```
 
-## Post Creation Flow
+### Post Creation Flow
 
-![Post Creation Flow](diagrams/post_creation_flow.png)
+```mermaid
+graph TD
+    A[User Navigates to Dashboard] --> B[Create Post Button]
+    B --> C[Complete Post Form]
+    C --> D[Add Image/Website Link]
+    D --> E[Create Unique NFT]
+    E --> F[Upload NFT to Filebase.io]
+    F --> G[Submit Post]
+    G --> H[Create Post Account & Voting Options Accounts]
+    H --> I[Post Account Becomes Asset Distributor]
+    I --> J[Transfer Assets from Issuer Account]
+    J --> K[Trigger Firebase Event]
+    K --> L[Push Post to Users' Timeline]
+```
 
 ## Detailed Workflow
 
