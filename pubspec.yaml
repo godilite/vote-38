@@ -82,6 +82,18 @@ flutter:
         - asset: fonts/FiraMono-Bold.ttf
         - asset: fonts/FiraMono-Medium.ttf
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: true
   ios: true
   image_path: "assets/images/logo.png"
+  web:
+      generate: true
+      image_path: "assets/images/logo.png"
+      background_color: "#hexcode"
+      theme_color: "#hexcode"
+  windows:
+    generate: true
+    image_path: "assets/images/logo.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/images/logo.png"

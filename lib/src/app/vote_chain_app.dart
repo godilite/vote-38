@@ -58,7 +58,7 @@ class _VoteChainAppState extends State<VoteChainApp> {
             builder: (context, child) {
               return NotificationListenerWrapper(
                 child: Scaffold(
-                  body: child,
+                  body: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 600), child: child)),
                 ),
               );
             },
